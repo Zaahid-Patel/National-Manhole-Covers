@@ -162,6 +162,8 @@ class Input(ctk.CTkToplevel):
         self.product.delete(0, "end")
         self.priorityVar.set("1")
 
+        #Save the updated data
+        self.master.save_to_csv()
 
 if __name__ == "__main__":
     app = Output()
