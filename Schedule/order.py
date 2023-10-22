@@ -11,28 +11,32 @@ class Output(ctk.CTk):
 
         self.title("Schedule")
         self.geometry("1280x720")
-        self.order_list = []
+        self.orderList = []
 
         self.schedule_frame = ctk.CTkFrame(self)
         self.schedule_frame.pack(expand=True, fill="both")
 
         ctk.CTkButton(self, text="Add Order", command=self.open_Input).pack(expand=True)
+        ctk.CTkButton(self, text="Sort by Priority", command=self.sorting_Alg).pack(expand=True)
 
     def open_Input(self):
         input = Input(self)
         input.grab_set()
 
-    def update_schedule(self):
+    def update_Schedule(self):
         for widget in self.schedule_frame.winfo_children():
             widget.destroy()
 
-        for order in self.order_list:
-            order_label = ctk.CTkLabel(
+        for order in self.orderList:
+            orderLabel = ctk.CTkLabel(
                 self.schedule_frame,
                 text=f"Customer Name: {order['Customer Name']}, Amount: {order['Amount']}, Product: {order['Product']}, Priority Level: {order['Priority Level']}",
             )
-            order_label.pack(fill="x")
+            orderLabel.pack(fill="x")
 
+    def sorting_Alg(self):
+        self.orderList = sorted(self.orderList, key=lambda order: int(order["Priority Level"]))
+        self.update_Schedule()
 
 class Input(ctk.CTkToplevel):
     def __init__(self, parent):
@@ -99,18 +103,20 @@ class Input(ctk.CTkToplevel):
 
         # Add Order Button
         self.addOrderButton = ctk.CTkButton(
-            self, text="Add Order", command=self.get_info
+            self, text="Add Order", command=self.get_Info
         )
         self.addOrderButton.grid(
             row=6, column=1, columnspan=2, padx=20, pady=20, sticky="ew"
         )
 
-    def get_info(self):
+    def get_Info(self):
+        # Get all info from Input function
         name = self.name.get()
         amount = self.amount.get()
         product = self.product.get()
         priority = self.priorityVar.get()
 
+        # Order format
         order = {
             "Customer Name": name,
             "Amount": amount,
@@ -118,10 +124,13 @@ class Input(ctk.CTkToplevel):
             "Priority Level": priority,
         }
 
-        self.master.order_list.append(order)
+        # Add to Order List
+        self.master.orderList.append(order)
 
-        self.master.update_schedule()
+        # Update the output
+        self.master.update_Schedule()
 
+        # Clear Input
         self.name.delete(0, "end")
         self.amount.delete(0, "end")
         self.product.delete(0, "end")
