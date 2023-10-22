@@ -1,5 +1,6 @@
 import tkinter as tk
 import customtkinter as ctk
+import csv
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -18,6 +19,9 @@ class Output(ctk.CTk):
 
         ctk.CTkButton(self, text="Add Order", command=self.open_Input).pack(expand=True)
         ctk.CTkButton(self, text="Sort by Priority", command=self.sorting_Alg).pack(expand=True)
+        ctk.CTkButton(self, text="Save to CSV", command=self.save_to_csv).pack(expand=True)
+
+        self.load_initial_state()
 
     def open_Input(self):
         input = Input(self)
@@ -37,6 +41,28 @@ class Output(ctk.CTk):
     def sorting_Alg(self):
         self.orderList = sorted(self.orderList, key=lambda order: int(order["Priority Level"]))
         self.update_Schedule()
+
+    def save_to_csv(self):
+        filename = "orders.csv"
+        try:
+            with open(filename, mode='w', newline='') as file:
+                fieldnames = ["Customer Name", "Amount", "Product", "Priority Level"]
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+                writer.writeheader()
+                writer.writerows(self.orderList)
+        except Exception as e:
+            print(f"Error while saving to CSV: {e}")
+
+    def load_initial_state(self):
+        filename = "orders.csv"
+        try:
+            with open(filename, mode='r') as file:
+                reader = csv.DictReader(file)
+                self.orderList = [row for row in reader]
+            self.update_Schedule()
+        except FileNotFoundError:
+            pass
 
 class Input(ctk.CTkToplevel):
     def __init__(self, parent):
