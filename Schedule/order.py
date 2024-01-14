@@ -13,13 +13,33 @@ class Output(ctk.CTk):
         self.title("Schedule")
         self.geometry("1280x720")
         self.orderList = []
+        
+        self.day1 = []
+        self.day1_max = 200
+        
+        self.day2 = []
+        self.day2_max = 200
+        
+        self.day3 = []
+        self.day3_max = 200
+        
+        self.day4 = []
+        self.day4_max = 200
+        
+        self.day5 = []
+        self.day5_max = 200
 
         self.schedule_frame = ctk.CTkFrame(self)
         self.schedule_frame.pack(expand=True, fill="both")
+        
+        for i in range(4):
+            self.schedule_frame.grid_rowconfigure(i, weight=1)
+        for j in range(5):
+            self.schedule_frame.grid_columnconfigure(j, weight=1)
 
-        ctk.CTkButton(self, text="Add Order", command=self.open_Input).pack(expand=True)
-        ctk.CTkButton(self, text="Sort by Priority", command=self.sorting_Alg).pack(expand=True)
-        ctk.CTkButton(self, text="Save to CSV", command=self.save_to_csv).pack(expand=True)
+        #ctk.CTkButton(self, text="Add Order", command=self.open_Input).pack(expand=True)
+        ctk.CTkButton(self, text="Sort by Priority", command=self.sorting_Alg).pack(side = "left", pady = 10, expand = True)
+        ctk.CTkButton(self, text="Save to CSV", command=self.save_to_csv).pack(side = "left", pady = 10, expand = True)
 
         self.load_initial_state()
 
@@ -28,15 +48,30 @@ class Output(ctk.CTk):
         input.grab_set()
 
     def update_Schedule(self):
+        # Clear existing widgets in the schedule_frame
         for widget in self.schedule_frame.winfo_children():
             widget.destroy()
+
+        for i in range(4):  # Rows
+            for j in range(5):  # Columns
+                label_text = f"Day {(j+1)+(i*5)}"
+                label = ctk.CTkLabel(self.schedule_frame, text=label_text, cursor="hand2")
+                label.grid(row=i, column=j, padx=5, pady=5, sticky="nsew")
+                label.bind("<Button-1>", lambda event, day=(j+1) + (i*5): self.show_day_schedule(day))
 
         for order in self.orderList:
             orderLabel = ctk.CTkLabel(
                 self.schedule_frame,
                 text=f"Customer Name: {order['Customer Name']}, Amount: {order['Amount']}, Product: {order['Product']}, Priority Level: {order['Priority Level']}",
             )
-            orderLabel.pack(fill="x")
+            #orderLabel.pack(fill="x")
+
+    def show_day_schedule(self, day):
+        day_window = tk.Toplevel(self)
+        day_window.title(f"Day {day} Schedule")
+
+        day_frame = ctk.CTkFrame(day_window)
+        day_frame.pack(expand=True, fill="both")
 
     def sorting_Alg(self):
         self.orderList = sorted(self.orderList, key=lambda order: int(order["Priority Level"]))
@@ -161,9 +196,7 @@ class Input(ctk.CTkToplevel):
         self.amount.delete(0, "end")
         self.product.delete(0, "end")
         self.priorityVar.set("1")
-
-        #Save the updated data
-        self.master.save_to_csv()
+        
 
 if __name__ == "__main__":
     app = Output()

@@ -4,7 +4,7 @@ For Linux:
 .venv\Scripts\activate
 
 For Windows:
-.venv\Scripts\activate.ps1 
+.venv\Scripts\activate
 
 To deactivate the virtual environment use:
 
