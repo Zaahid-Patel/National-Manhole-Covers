@@ -164,7 +164,7 @@ class Output(ctk.CTk):
 
     def set_day_max(self, day, max_box):
         entered_value = max_box.get()
-        self.day_max[day-1] = entered_value
+        self.day_max[day-1] = int(entered_value)
 
 
 
