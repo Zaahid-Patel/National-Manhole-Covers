@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkcalendar import Calendar
+import tkcalendar
 import customtkinter as ctk
 import csv
-from datetime import datetime, timedelta
+import datetime
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -62,34 +62,34 @@ class Output(ctk.CTk):
     def show_calendar(self):
         # Function to display a calendar and get the selected date
         top = tk.Toplevel(self)
-        cal = Calendar(top, selectmode="day", year=2024, month=2, day=1)  # Set your desired starting date
+        cal = tkcalendar.Calendar(top, selectmode="day", year=2024, month=2, day=1)  # Set your desired starting date
         cal.pack(padx=10, pady=10)
 
         def set_date():
             # Set the real_day and update the schedule when a date is selected
             self.day1 = cal.selection_get()
-            self.day2 = self.day1 + timedelta(days=1)
-            self.day3 = self.day1 + timedelta(days=2)
-            self.day4 = self.day1 + timedelta(days=3)
-            self.day5 = self.day1 + timedelta(days=4)
+            self.day2 = self.day1 + datetime.timedelta(days=1)
+            self.day3 = self.day1 + datetime.timedelta(days=2)
+            self.day4 = self.day1 + datetime.timedelta(days=3)
+            self.day5 = self.day1 + datetime.timedelta(days=4)
             
-            self.day6 = self.day1 + timedelta(days=7)
-            self.day7 = self.day1 + timedelta(days=8)
-            self.day8 = self.day1 + timedelta(days=9)
-            self.day9 = self.day1 + timedelta(days=10)
-            self.day10 = self.day1 + timedelta(days=11)
+            self.day6 = self.day1 + datetime.timedelta(days=7)
+            self.day7 = self.day1 + datetime.timedelta(days=8)
+            self.day8 = self.day1 + datetime.timedelta(days=9)
+            self.day9 = self.day1 + datetime.timedelta(days=10)
+            self.day10 = self.day1 + datetime.timedelta(days=11)
             
-            self.day11 = self.day1 + timedelta(days=14)
-            self.day12 = self.day1 + timedelta(days=15)
-            self.day13 = self.day1 + timedelta(days=16)
-            self.day14 = self.day1 + timedelta(days=17)
-            self.day15 = self.day1 + timedelta(days=18)
+            self.day11 = self.day1 + datetime.timedelta(days=14)
+            self.day12 = self.day1 + datetime.timedelta(days=15)
+            self.day13 = self.day1 + datetime.timedelta(days=16)
+            self.day14 = self.day1 + datetime.timedelta(days=17)
+            self.day15 = self.day1 + datetime.timedelta(days=18)
             
-            self.day16 = self.day1 + timedelta(days=21)
-            self.day17 = self.day1 + timedelta(days=22)
-            self.day18 = self.day1 + timedelta(days=23)
-            self.day19 = self.day1 + timedelta(days=24)
-            self.day20 = self.day1 + timedelta(days=25)
+            self.day16 = self.day1 + datetime.timedelta(days=21)
+            self.day17 = self.day1 + datetime.timedelta(days=22)
+            self.day18 = self.day1 + datetime.timedelta(days=23)
+            self.day19 = self.day1 + datetime.timedelta(days=24)
+            self.day20 = self.day1 + datetime.timedelta(days=25)
             
             self.update_Schedule()
             top.destroy()
@@ -283,30 +283,37 @@ class Output(ctk.CTk):
         try:
             with open(filename, mode='r') as file:
                 reader = csv.DictReader(file)
-    
+
                 # Clear existing orderList and day_max
                 self.orderList = {}
                 self.day_max = []
-    
-                # Read day_max from the first row
-                first_row = next(reader)
-                values_str = first_row.get("Values", "")
-                self.day_max = list(map(int, values_str.split(",")))
-    
-                # Populate orderList with orders for each day
-                for row in reader:
-                    day = row.pop('Day')  # Extract the day from the row
-                    self.orderList.setdefault(day, []).append(row)
-    
-                # Update the schedule after loading orders
-                self.update_Schedule()
+
+                # Check if the file is empty
+                try:
+                    # Read day_max from the first row
+                    first_row = next(reader)
+                    values_str = first_row.get("Values", "")
+                    self.day_max = list(map(int, values_str.split(",")))
+
+                    # Populate orderList with orders for each day
+                    for row in reader:
+                        day = row.pop('Day')  # Extract the day from the row
+                        self.orderList.setdefault(day, []).append(row)
+
+                    # Update the schedule after loading orders
+                    self.update_Schedule()
+
+                except StopIteration:
+                    # Handle the case when the file is empty
+                    pass
+
         except FileNotFoundError:
             # Create a new CSV file if it doesn't exist
             with open(filename, mode='w', newline='') as file:
                 fieldnames = ["Day", "Customer Name", "Amount", "Product", "Priority Level"]
                 writer = csv.DictWriter(file, fieldnames=fieldnames + ["Values"])
                 writer.writeheader()
-            print(f"Created a new CSV file: {filename}")
+
             # Update the schedule after creating a new CSV file
             self.update_Schedule()
 
@@ -701,5 +708,10 @@ class EditInput(ctk.CTkToplevel):
         self.destroy()
 
 if __name__ == "__main__":
-    app = Output()
-    app.mainloop()
+    try:
+        app = Output()
+        app.mainloop()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        input("Press Enter to exit...")
