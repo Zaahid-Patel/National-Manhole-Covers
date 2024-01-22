@@ -1,2 +1,11 @@
-Day,Customer Name,Amount,Product,Priority Level
-day1,fewf,5454,greg,2
+Day,Customer Name,Amount,Product,Priority Level,Values
+,,,,,"213,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200"
+day1,ref,34,fwfe,1,
+day1,ferf,34,fre,2,
+day1,Zaahid,145,Rolls,1,
+day2,Zaahid,200,Rolls,1,
+day3,Zaahid,200,Rolls,1,
+day4,Zaahid,200,Rolls,1,
+day5,Zaahid,200,Rolls,1,
+day6,Zaahid,55,Rolls,1,
+day6,Bean,55,Beans,2,

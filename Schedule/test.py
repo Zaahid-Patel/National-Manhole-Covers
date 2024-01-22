@@ -121,11 +121,25 @@ class Output(ctk.CTk):
         max_frame.pack(side="top", pady=10)
         ctk.CTkLabel(max_frame, text="Max: ").pack(side="left")
         max_box = ctk.CTkEntry(max_frame, placeholder_text="200")
+        max_box.insert(0, self.day_max[day-1])  # Pre-fill with existing value
         max_box.pack(side="left")
         ctk.CTkButton(max_frame, text="Set", width=1, command=lambda d=day: self.set_day_max(d, max_box)).pack(side="left")
         ctk.CTkButton(day_frame, text="Add Order", command=lambda d=day: self.open_day_Input(d)).pack(side="left", pady=10, expand=True)
         ctk.CTkButton(day_frame, text="Sort by Priority per Day", command=lambda d=day: self.sorting_Alg_per_day(d)).pack(side="left", pady=10, expand=True)
         ctk.CTkButton(day_frame, text="Clear Day", command=lambda d=day: self.clear_day(d)).pack(side="left", pady=10, expand=True)
+        
+    def calculate_total_amount(self, day):
+        # Calculate the total amount of existing orders for the specified day
+        total_amount = sum(int(order.get("Amount", 0)) for order in self.orderList.get(f'day{day}', []))
+        
+        # Get the current day max capacity
+        current_capacity = self.day_max[day-1]
+
+        # Update the remaining capacity
+        remaining_capacity = current_capacity - total_amount
+
+        # Return the remaining capacity if needed
+        return remaining_capacity
     
     def open_edit_window(self, day, order):
         # Create an edit window similar to the Input window
@@ -166,11 +180,14 @@ class Output(ctk.CTk):
         try:
             with open(filename, mode='w', newline='') as file:
                 fieldnames = ["Day", "Customer Name", "Amount", "Product", "Priority Level"]
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
-
+                writer = csv.DictWriter(file, fieldnames=fieldnames + ["Values"])
+    
                 # Write header
                 writer.writeheader()
-
+    
+                # Write day_max
+                writer.writerow({"Values": ",".join(map(str, self.day_max))})
+    
                 # Write orders for each day
                 for day, orders in self.orderList.items():
                     for order in orders:
@@ -179,29 +196,34 @@ class Output(ctk.CTk):
                         writer.writerow(order_with_day)
         except Exception as e:
             print(f"Error while saving to CSV: {e}")
-
-
+    
     def load_initial_state(self):
         filename = "orders.csv"
         try:
             with open(filename, mode='r') as file:
                 reader = csv.DictReader(file)
-
-                # Clear existing orderList
+    
+                # Clear existing orderList and day_max
                 self.orderList = {}
-
+                self.day_max = []
+    
+                # Read day_max from the first row
+                first_row = next(reader)
+                values_str = first_row.get("Values", "")
+                self.day_max = list(map(int, values_str.split(",")))
+    
                 # Populate orderList with orders for each day
                 for row in reader:
                     day = row.pop('Day')  # Extract the day from the row
                     self.orderList.setdefault(day, []).append(row)
-
+    
                 # Update the schedule after loading orders
                 self.update_Schedule()
         except FileNotFoundError:
             # Create a new CSV file if it doesn't exist
             with open(filename, mode='w', newline='') as file:
                 fieldnames = ["Day", "Customer Name", "Amount", "Product", "Priority Level"]
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer = csv.DictWriter(file, fieldnames=fieldnames + ["Values"])
                 writer.writeheader()
             print(f"Created a new CSV file: {filename}")
             # Update the schedule after creating a new CSV file
@@ -280,32 +302,66 @@ class Input(ctk.CTkToplevel):
         )
 
     def get_Info(self):
-        # Get all info from Input function
+        # Get order details from the input fields
         name = self.name.get()
-        amount = self.amount.get()
+        amount = int(self.amount.get())  # Ensure amount is an integer
         product = self.product.get()
         priority = self.priorityVar.get()
 
-        # Order format
-        order = {
-            "Customer Name": name,
-            "Amount": amount,
-            "Product": product,
-            "Priority Level": priority,
-        }
+        # Find the next available day with remaining amount
+        next_available_day = self.find_next_available_day()
 
-        # Add to Order List
-        self.master.orderList['day1'].append(order)
+        # If there's a day available
+        if next_available_day is not None:
+            # Calculate the amount to be added on the next available day
+            amount_on_next_day = min(amount, self.master.calculate_total_amount(next_available_day))
+            remaining_amount = amount - amount_on_next_day
 
-        # Update the output
-        self.master.update_Schedule()
+            # Add order to the next available day
+            day_key = f'day{next_available_day}'
+            order = {
+                "Customer Name": name,
+                "Amount": amount_on_next_day,
+                "Product": product,
+                "Priority Level": priority,
+            }
+            self.master.orderList.setdefault(day_key, []).append(order)
 
-        # Clear Input
-        self.name.delete(0, "end")
-        self.amount.delete(0, "end")
-        self.product.delete(0, "end")
-        self.priorityVar.set("1")
-        
+            # Distribute remaining amount across subsequent days
+            current_day = next_available_day + 1
+            while remaining_amount > 0 and current_day <= len(self.master.day_max):
+                max_amount = self.master.day_max[current_day - 1]
+                amount_on_current_day = min(remaining_amount, max_amount)
+
+                day_key = f'day{current_day}'
+                order = {
+                    "Customer Name": name,
+                    "Amount": amount_on_current_day,
+                    "Product": product,
+                    "Priority Level": priority,
+                }
+                self.master.orderList.setdefault(day_key, []).append(order)
+
+                remaining_amount -= amount_on_current_day
+                current_day += 1
+
+            # Update the output
+            self.master.update_Schedule()
+
+
+            # Clear Input
+            self.name.delete(0, "end")
+            self.amount.delete(0, "end")
+            self.product.delete(0, "end")
+            self.priorityVar.set("1")
+            
+    def find_next_available_day(self):
+        for day in range(1, 21):
+            remaining_capacity = self.master.calculate_total_amount(day)
+            if remaining_capacity > 0:
+                return day
+        return None
+
 class Day_Input(ctk.CTkToplevel):
     def __init__(self, parent, day):
         super().__init__(parent)
@@ -329,6 +385,7 @@ class Day_Input(ctk.CTkToplevel):
         # Amount Textbox
         self.amount = ctk.CTkEntry(self, placeholder_text="1375")
         self.amount.grid(row=1, column=1, columnspan=3, padx=20, pady=20, sticky="ew")
+        self.amount.insert(0, self.master.calculate_total_amount(self.day))  # Pre-fill with existing value
 
         # Product Label
         self.productLabel = ctk.CTkLabel(self, text="Product")
@@ -403,11 +460,11 @@ class Day_Input(ctk.CTkToplevel):
         # Update the output
         self.master.update_Schedule()
 
-        # Clear Input
-        self.name.delete(0, "end")
-        self.amount.delete(0, "end")
-        self.product.delete(0, "end")
-        self.priorityVar.set("1")
+        # Destroy the current window
+        self.destroy()
+
+        # Create a new instance of the Day_Input window for the same day
+        self.master.open_day_Input(self.day)
         
 class EditInput(ctk.CTkToplevel):
     def __init__(self, parent, day, order):
@@ -416,7 +473,7 @@ class EditInput(ctk.CTkToplevel):
         self.order = order
 
         self.title(f"Edit Order - Day {day}")
-        self.geometry("420x470")
+        self.geometry("510x530")
 
         # Customer Label
         self.customerLabel = ctk.CTkLabel(self, text="Customer Name")
@@ -425,6 +482,7 @@ class EditInput(ctk.CTkToplevel):
         # Customer Textbox
         self.name = ctk.CTkEntry(self, placeholder_text="eg. ithuba ccc")
         self.name.grid(row=0, column=1, columnspan=3, padx=20, pady=20, sticky="ew")
+        self.name.insert(0, order.get("Customer Name", ""))  # Pre-fill with existing value
 
         # Amount Label
         self.amountLabel = ctk.CTkLabel(self, text="Amount")
@@ -433,6 +491,7 @@ class EditInput(ctk.CTkToplevel):
         # Amount Textbox
         self.amount = ctk.CTkEntry(self, placeholder_text="1375")
         self.amount.grid(row=1, column=1, columnspan=3, padx=20, pady=20, sticky="ew")
+        self.amount.insert(0, order.get("Amount", ""))  # Pre-fill with existing value
 
         # Product Label
         self.productLabel = ctk.CTkLabel(self, text="Product")
@@ -441,6 +500,7 @@ class EditInput(ctk.CTkToplevel):
         # Product Textbox
         self.product = ctk.CTkEntry(self, placeholder_text="eg. T8 C MD")
         self.product.grid(row=2, column=1, columnspan=3, padx=20, pady=20, sticky="ew")
+        self.product.insert(0, order.get("Product", ""))  # Pre-fill with existing value
 
         # Priority Label
         self.choiceLabel = ctk.CTkLabel(self, text="Priority Level")
@@ -474,12 +534,37 @@ class EditInput(ctk.CTkToplevel):
         )
         self.priority5.grid(row=5, column=1, padx=20, pady=20, sticky="ew")
 
+        # Pre-select the existing priority value
+        self.priorityVar.set(str(order.get("Priority Level", "1")))
+        
+        # Day Picker Label
+        self.moveDayLabel = ctk.CTkLabel(self, text="Move to Day")
+        self.moveDayLabel.grid(row=6, column=0, padx=20, pady=20, sticky="ew")
+
+        # Day Picker Dropdown
+        self.moveDayVar = tk.StringVar()
+        self.moveDayVar.set(str(day))
+        self.moveDayPicker = ctk.CTkComboBox(
+            self,
+            values=[str(i) for i in range(1, 21)]
+        )
+        self.moveDayPicker.set(str(day))  # Set the initial value
+        self.moveDayPicker.grid(row=6, column=1, padx=20, pady=20, sticky="ew")
+
         # Add a button to apply changes
         self.applyChangesButton = ctk.CTkButton(
             self, text="Apply Changes", command=self.apply_changes
         )
         self.applyChangesButton.grid(
-            row=6, column=1, columnspan=2, padx=20, pady=20, sticky="ew"
+            row=7, column=1, columnspan=1, padx=20, pady=20, sticky="ew"
+        )
+        
+        # Add a button to delete the order
+        self.deleteOrderButton = ctk.CTkButton(
+            self, text="Delete Order", command=self.delete_order
+        )
+        self.deleteOrderButton.grid(
+            row=7, column=0, columnspan=1, padx=20, pady=20, sticky="ew"
         )
 
     def apply_changes(self):
@@ -494,6 +579,36 @@ class EditInput(ctk.CTkToplevel):
         self.order["Amount"] = updated_amount
         self.order["Product"] = updated_product
         self.order["Priority Level"] = updated_priority
+
+        # Get the selected day from the dropdown
+        target_day = int(self.moveDayPicker.get())
+
+        # Move the order to the selected day
+        self.move_order_to_day(target_day)
+
+        # Refresh the day_window
+        self.master.update_day_schedule(self.day)
+
+        # Update the output
+        self.master.update_Schedule()
+
+        # Close the edit window
+        self.destroy()
+        
+    def move_order_to_day(self, target_day):
+        # Remove the order from the current day
+        self.master.orderList[f'day{self.day}'].remove(self.order)
+
+        # Add the order to the selected day
+        day_key = f'day{target_day}'
+        self.master.orderList.setdefault(day_key, []).append(self.order)
+        
+        # Set the selected value in the combobox
+        self.moveDayPicker.set(str(target_day))
+        
+    def delete_order(self):
+        # Remove the order from the order list
+        self.master.orderList[f'day{self.day}'].remove(self.order)
 
         # Refresh the day_window
         self.master.update_day_schedule(self.day)
