@@ -1,8 +1,26 @@
+from __future__ import annotations
+import tkinter.filedialog
+import pytz
+import babel.dates
+import zoneinfo
+from tkcalendar.dateentry import DateEntry
+from tkcalendar.calendar_ import Calendar
+from babel import default_locale
+from babel.core import (
+    Locale,
+    UnknownLocaleError,
+    default_locale,
+    get_locale_identifier,
+    negotiate_locale,
+    parse_locale,
+)
 import tkinter as tk
 import tkcalendar
 import customtkinter as ctk
 import csv
 import datetime
+
+
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -283,37 +301,41 @@ class Output(ctk.CTk):
         try:
             with open(filename, mode='r') as file:
                 reader = csv.DictReader(file)
-
+    
                 # Clear existing orderList and day_max
                 self.orderList = {}
                 self.day_max = []
-
+    
                 # Check if the file is empty
                 try:
                     # Read day_max from the first row
                     first_row = next(reader)
                     values_str = first_row.get("Values", "")
                     self.day_max = list(map(int, values_str.split(",")))
-
+    
                     # Populate orderList with orders for each day
                     for row in reader:
                         day = row.pop('Day')  # Extract the day from the row
                         self.orderList.setdefault(day, []).append(row)
-
+    
                     # Update the schedule after loading orders
                     self.update_Schedule()
-
+    
                 except StopIteration:
                     # Handle the case when the file is empty
                     pass
-
+                
+                # If day_max is still empty, set some default values
+                if not self.day_max:
+                    self.day_max = [200] * 20  # Set default max values for 20 days
+    
         except FileNotFoundError:
             # Create a new CSV file if it doesn't exist
             with open(filename, mode='w', newline='') as file:
                 fieldnames = ["Day", "Customer Name", "Amount", "Product", "Priority Level"]
                 writer = csv.DictWriter(file, fieldnames=fieldnames + ["Values"])
                 writer.writeheader()
-
+    
             # Update the schedule after creating a new CSV file
             self.update_Schedule()
 
