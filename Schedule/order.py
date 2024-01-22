@@ -1,6 +1,8 @@
 import tkinter as tk
+from tkcalendar import Calendar
 import customtkinter as ctk
 import csv
+from datetime import datetime, timedelta
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -24,8 +26,75 @@ class Output(ctk.CTk):
         ctk.CTkButton(self, text="Sort by Priority", command=self.sorting_Alg).pack(side = "left", pady = 10, expand = True)
         ctk.CTkButton(self, text="Clear", command=self.clear).pack(side = "left", pady = 10, expand = True)
         ctk.CTkButton(self, text="Save to CSV", command=self.save_to_csv).pack(side = "left", pady = 10, expand = True)
+        self.date_picker_button = ctk.CTkButton(self, text="Select Date", command=self.show_calendar)
+        self.date_picker_button.pack(side="left", pady=10, expand=True)
+
+        # Initialize real_day variable to store the selected date
+        self.day1 = None
+        self.day2 = None
+        self.day3 = None
+        self.day4 = None
+        self.day5 = None
+        
+        self.day6 = None
+        self.day7 = None
+        self.day8 = None
+        self.day9 = None
+        self.day10 = None
+        
+        self.day11 = None
+        self.day12 = None
+        self.day13 = None
+        self.day14 = None
+        self.day15 = None
+        
+        self.day16 = None
+        self.day17 = None
+        self.day18 = None
+        self.day19 = None
+        self.day20 = None
+
+        # Call a function to update the schedule with the real_day
+        self.update_Schedule()
 
         self.load_initial_state()
+
+    def show_calendar(self):
+        # Function to display a calendar and get the selected date
+        top = tk.Toplevel(self)
+        cal = Calendar(top, selectmode="day", year=2024, month=2, day=1)  # Set your desired starting date
+        cal.pack(padx=10, pady=10)
+
+        def set_date():
+            # Set the real_day and update the schedule when a date is selected
+            self.day1 = cal.selection_get()
+            self.day2 = self.day1 + timedelta(days=1)
+            self.day3 = self.day1 + timedelta(days=2)
+            self.day4 = self.day1 + timedelta(days=3)
+            self.day5 = self.day1 + timedelta(days=4)
+            
+            self.day6 = self.day1 + timedelta(days=7)
+            self.day7 = self.day1 + timedelta(days=8)
+            self.day8 = self.day1 + timedelta(days=9)
+            self.day9 = self.day1 + timedelta(days=10)
+            self.day10 = self.day1 + timedelta(days=11)
+            
+            self.day11 = self.day1 + timedelta(days=14)
+            self.day12 = self.day1 + timedelta(days=15)
+            self.day13 = self.day1 + timedelta(days=16)
+            self.day14 = self.day1 + timedelta(days=17)
+            self.day15 = self.day1 + timedelta(days=18)
+            
+            self.day16 = self.day1 + timedelta(days=21)
+            self.day17 = self.day1 + timedelta(days=22)
+            self.day18 = self.day1 + timedelta(days=23)
+            self.day19 = self.day1 + timedelta(days=24)
+            self.day20 = self.day1 + timedelta(days=25)
+            
+            self.update_Schedule()
+            top.destroy()
+
+        ctk.CTkButton(top, text="Set Date", command=set_date).pack(pady=10)
 
     def clear(self):
         self.orderList = {f'day{i}': [] for i in range(1, 21)}
@@ -43,30 +112,37 @@ class Output(ctk.CTk):
         for widget in self.schedule_frame.winfo_children():
             widget.destroy()
 
-        for i in range(4):  # Rows
-            for j in range(5):  # Columns
-                day_label_text = f"Day {(j+1)+(i*5)}"
-                max_label_text = "Max: "
-                # Create labels for day and max
-                day_label = ctk.CTkLabel(self.schedule_frame, text=day_label_text, cursor="hand2")
-                #max_label = ctk.CTkLabel(self.schedule_frame, text=max_label_text)
-                # Create entry widget for max
-                #max_box = ctk.CTkEntry(self.schedule_frame, placeholder_text="200")
-                #max_button = ctk.CTkButton(self.schedule_frame, text="Set", width=1, command=lambda d=(j+1) + (i*5): self.set_day_max(d, max_box))
+        if self.day1:
+            for i in range(4):  # Rows
+                for j in range(5):  # Columns
+                    day_label_text = f"Day {(j+1)+(i*5)}"
+                    text=f"{getattr(self, f'day{(j+1)+(i*5)}').strftime('%A, %d %B %Y')}"
+                    # Create labels for day
+                    day_label = ctk.CTkLabel(self.schedule_frame, text=day_label_text+"\n"+text, cursor="hand2")
 
-                # Grid the widgets
-                day_label.grid(row=i*2, column=j*3, padx=1, pady=1, sticky="ew", columnspan=3)
-                #max_label.grid(row=i*2+1, column=j*3, padx=1, pady=1, sticky="ew")
-                #max_box.grid(row=i*2+1, column=j*3+1, padx=1, pady=1, sticky="ew")
-                #max_button.grid(row=i*2+1, column=j*3+2, padx=1, pady=1, sticky="ew")
+                    # Grid the widgets
+                    day_label.grid(row=i*2, column=j*3, padx=1, pady=1, sticky="ew", columnspan=3)
 
-                self.schedule_frame.grid_rowconfigure(i * 2, weight=3, minsize=3)
-                self.schedule_frame.grid_rowconfigure(i * 2 + 1, weight=1, minsize=2)
-                self.schedule_frame.grid_columnconfigure(j * 3, weight=2)
-                self.schedule_frame.grid_columnconfigure(j * 3 + 1, weight=2)
-                self.schedule_frame.grid_columnconfigure(j * 3 + 2, weight=1)
+                    self.schedule_frame.grid_rowconfigure(i * 2, weight=1, minsize=1)
+                    self.schedule_frame.grid_columnconfigure(j * 3, weight=2)
 
-                day_label.bind("<Button-1>", lambda event, day=(j+1) + (i*5): self.update_day_schedule(day))
+                    day_label.bind("<Button-1>", lambda event, day=(j+1) + (i*5): self.update_day_schedule(day))
+            
+        else:
+            for i in range(4):  # Rows
+                for j in range(5):  # Columns
+                    day_label_text = f"Day {(j+1)+(i*5)}"
+                    # Create labels for day
+                    day_label = ctk.CTkLabel(self.schedule_frame, text=day_label_text, cursor="hand2")
+
+                    # Grid the widgets
+                    day_label.grid(row=i*2, column=j*3, padx=1, pady=1, sticky="ew", columnspan=3)
+
+                    self.schedule_frame.grid_rowconfigure(i * 2, weight=3, minsize=3)
+                    self.schedule_frame.grid_rowconfigure(i * 2 + 1, weight=1, minsize=2)
+                    self.schedule_frame.grid_columnconfigure(j * 3, weight=2)
+
+                    day_label.bind("<Button-1>", lambda event, day=(j+1) + (i*5): self.update_day_schedule(day))
 
     def set_day_max(self, day, max_box):
         entered_value = max_box.get()
@@ -80,16 +156,18 @@ class Output(ctk.CTk):
                 # Create a new Toplevel window for the day if it doesn't exist
                 self.day_windows[day] = tk.Toplevel(self)
                 self.day_windows[day].title(f"Day {day} Schedule")
+                self.day_windows[day].geometry("700x720")
         else:
             # Create a new Toplevel window for the day
             self.day_windows[day] = tk.Toplevel(self)
             self.day_windows[day].title(f"Day {day} Schedule")
+            self.day_windows[day].geometry("700x720")
 
         # Destroy existing widgets in day_frame
         for widget in self.day_windows[day].winfo_children():
             widget.destroy()
 
-        day_frame = ctk.CTkFrame(self.day_windows[day])
+        day_frame = ctk.CTkScrollableFrame(self.day_windows[day])
         day_frame.pack(expand=True, fill="both")
 
         # Add up and down arrows for changing order
@@ -112,9 +190,9 @@ class Output(ctk.CTk):
             orderLabel.pack(side="left", fill="x")
 
             up_button = ctk.CTkButton(order_frame, text="↑", command=lambda o=order: self.move_order_up(day, o))
-            up_button.pack(side="left", padx=5)
+            up_button.pack(side="right", padx=5)
             down_button = ctk.CTkButton(order_frame, text="↓", command=lambda o=order: self.move_order_down(day, o))
-            down_button.pack(side="left", padx=5)
+            down_button.pack(side="right", padx=5)
             
 
         max_frame = ctk.CTkFrame(day_frame)
@@ -165,7 +243,10 @@ class Output(ctk.CTk):
             self.update_day_schedule(day)
 
     def sorting_Alg(self):
-        self.orderList = sorted(self.orderList, key=lambda order: int(order["Priority Level"]))
+        for day in range(1, 21):
+            # Check if the day exists in self.orderList
+            if f'day{day}' in self.orderList and len(self.orderList[f'day{day}']) > 0:
+                self.orderList[f'day{day}'] = sorted(self.orderList[f'day{day}'], key=lambda order: int(order["Priority Level"]))
         self.update_Schedule()
         
     def sorting_Alg_per_day(self, day):
